@@ -1,4 +1,4 @@
 termination-detection
 =====================
 
-Implementation of various termination detection of algorithms in peersim
+Implementation of various termination detection algorithms in peersim
