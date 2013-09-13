@@ -14,10 +14,23 @@ implements CDProtocol, EDProtocol {
 // Initialization
 //--------------------------------------------------------------------------
 
-public DijkstraScholten(String prefix) { super(prefix); isActivated=false; }
-
-public long parentIndex;
+public DijkstraScholten(String prefix) { 
+    super(prefix); 
+    isActivated=false; 
+    activationSent = false; 
+    isTerminated = false; 
+    parentIndex = -1; 
+    computedVal = 0;
+    terminatedChildren = 0;
+    activatedChildren = 0;
+}
+public int parentIndex;
+public int terminatedChildren;
+public int activatedChildren;
+public long computedVal;
 public boolean isActivated;
+public boolean isTerminated;
+public boolean activationSent;
 
 //--------------------------------------------------------------------------
 // methods
@@ -31,21 +44,48 @@ public boolean isActivated;
 public void nextCycle( Node node, int pid )
 {
     int currentNodeIndex = node.getIndex();
+    boolean isActive = ((DijkstraScholten)node.getProtocol(pid)).isActivated;
+    boolean isTerminated = ((DijkstraScholten)node.getProtocol(pid)).isTerminated;
 	Linkable linkable = 
 		(Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
     int maxDegree = linkable.degree();
-    for (int i = 0; i < maxDegree; i++) {
-        Node childNode = linkable.getNeighbor(i);
+    if (isActive && !activationSent) {
+        for (int i = 0; i < maxDegree; i++) {
+            Node childNode = linkable.getNeighbor(i);
 
-        if (childNode.isUp()) {
-            ((Transport)node.getProtocol(FastConfig.getTransport(pid))).
-                send(
-                        node,
-                        childNode,
-                        new ActivationMessage(currentNodeIndex),
-                        pid);
+            if (childNode.isUp()) {
+                ((DijkstraScholten)node.getProtocol(pid)).activatedChildren++;
+                ((Transport)node.getProtocol(FastConfig.getTransport(pid))).
+                    send(
+                            node,
+                            childNode,
+                            new ActivationMessage(currentNodeIndex),
+                            pid);
+            }
         }
+        activationSent = true;
     }
+    if (isActive && !isTerminated) {
+        if ( ((DijkstraScholten)node.getProtocol(pid)).computedVal < currentNodeIndex * currentNodeIndex)
+            ((DijkstraScholten)node.getProtocol(pid)).computedVal+=currentNodeIndex;
+        else {
+            int terminatedChildren = ((DijkstraScholten)node.getProtocol(pid)).terminatedChildren;
+            int parentIndex = ((DijkstraScholten)node.getProtocol(pid)).parentIndex;
+            int activatedChildren = ((DijkstraScholten)node.getProtocol(pid)).activatedChildren;
+            if (terminatedChildren == activatedChildren) {
+                if (parentIndex != -1) {
+                Node parentNode = Network.get(parentIndex);
+                ((Transport)node.getProtocol(FastConfig.getTransport(pid))).
+                    send(
+                            node,
+                            parentNode,
+                            new TerminationMessage(),
+                            pid);
+                }
+                ((DijkstraScholten)node.getProtocol(pid)).isTerminated = true;
+            }
+        }
+    } 
 
 }
 
@@ -59,9 +99,14 @@ public void processEvent( Node node, int pid, Object event ) {
 		
 	Linkable linkable = 
 		(Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
-	ActivationMessage aem = (ActivationMessage)event;
-    ((DijkstraScholten)node.getProtocol(pid)).parentIndex = aem.senderIndex;
-    ((DijkstraScholten)node.getProtocol(pid)).isActivated = true;
+	if ( event instanceof ActivationMessage ){
+        ActivationMessage aem = (ActivationMessage)event;
+        ((DijkstraScholten)node.getProtocol(pid)).parentIndex = aem.senderIndex;
+        ((DijkstraScholten)node.getProtocol(pid)).isActivated = true;
+    }
+    if ( event instanceof TerminationMessage ) {
+        ((DijkstraScholten)node.getProtocol(pid)).terminatedChildren++;
+    }
 }
 
 }
@@ -75,14 +120,17 @@ public void processEvent( Node node, int pid, Object event ) {
 */
 class ActivationMessage {
 
-	final long senderIndex;
+	final int senderIndex;
     public ActivationMessage()
     {
         this.senderIndex = -1;
     }
-	public ActivationMessage(long senderNodeIndex)
+	public ActivationMessage(int senderNodeIndex)
 	{
 		this.senderIndex = senderNodeIndex;
 	}
+}
+class TerminationMessage {
+
 }
 

@@ -40,6 +40,7 @@ public class DijkstraScholtenObserver implements Control {
 
     public boolean execute() {
         long time = peersim.core.CommonState.getTime();
+        DijkstraScholten rootNodeProtocol = (DijkstraScholten) Network.get(0).getProtocol(pid);
 
         // IncrementalStats is = new IncrementalStats();
 
@@ -52,12 +53,12 @@ public class DijkstraScholtenObserver implements Control {
 //             is.add(protocol.getValue());
 
         /* Printing statistics */
-            if(protocol.isActivated)
-                System.out.println("["+cycles+"]"+i + ": " + time + "  isActivated->" + protocol.isActivated + " by " + protocol.parentIndex);
+            // if(protocol.isTerminated)
+                System.out.println("["+cycles+"]"+i + ": " + protocol.computedVal + "  isActivated->" + protocol.isActivated + " by " + protocol.parentIndex + " terminated children = " + protocol.terminatedChildren);
          }
 
         cycles++;
         /* Terminate if accuracy target is reached */
-        return (cycles>6);
+        return rootNodeProtocol.isTerminated;
     }
 }
