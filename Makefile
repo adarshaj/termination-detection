@@ -5,7 +5,7 @@ compile:
 	javac -sourcepath src -classpath $(LIB_JARS) -d classes `find -L -name "*.java"`
 
 run:
-	java -cp $(LIB_JARS):classes peersim.Simulator example/config-example1.txt
+	java -cp $(LIB_JARS):classes peersim.Simulator config-DijkstraScholten.txt
 
 all: compile run
 

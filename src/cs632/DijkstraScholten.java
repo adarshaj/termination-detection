@@ -7,7 +7,8 @@ import peersim.transport.Transport;
 import peersim.cdsim.CDProtocol;
 import peersim.edsim.EDProtocol;
 
-public class DijkstraScholten implements CDProtocol, EDProtocol {
+public class DijkstraScholten extends SingleValueHolder
+implements CDProtocol, EDProtocol {
 
 //--------------------------------------------------------------------------
 // Initialization

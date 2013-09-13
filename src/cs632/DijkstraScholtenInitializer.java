@@ -42,7 +42,7 @@ public class DijkstraScholtenInitializer implements Control {
     /**
      * Creates a new instance and read parameters from the config file.
      */
-    public PeakDistributionInitializer(String prefix) {
+    public DijkstraScholtenInitializer(String prefix) {
         value = Configuration.getDouble(prefix + "." + PAR_VALUE);
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
     }
@@ -59,11 +59,9 @@ public class DijkstraScholtenInitializer implements Control {
     public boolean execute() {
         Node rootNode = Network.get(0);
         ((DijkstraScholten)rootNode.getProtocol(pid)).parentID = -1;
-        Linkable linkable = rootNode.getProtocol( FastConfig.getLinkable(pid) );
+        Linkable linkable = (Linkable) rootNode.getProtocol( FastConfig.getLinkable(pid) );
 
-        Node childNode = linkable.getNeighbors();
-
-        Linkable
+        Node childNode = linkable.getNeighbor(linkable.degree()-1);
 
         return false;
     }
