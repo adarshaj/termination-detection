@@ -1,6 +1,8 @@
 package cs632;
 
 import cs632.DijkstraScholten;
+import cs632.ActivationMessage;
+import peersim.transport.Transport;
 import peersim.config.*;
 import peersim.core.*;
 
@@ -10,29 +12,15 @@ public class DijkstraScholtenInitializer implements Control {
     // Constants
     // ------------------------------------------------------------------------
 
-    /**
-     * The load at the peak node.
-     * 
-     * @config
-     */
     private static final String PAR_VALUE = "value";
 
-    /**
-     * The protocol to operate on.
-     * 
-     * @config
-     */
     private static final String PAR_PROT = "protocol";
 
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------
 
-    /** Value at the peak node.
-    * Obtained from config property {@link #PAR_VALUE}. */
     private final double value;
-
-    /** Protocol identifier; obtained from config property {@link #PAR_PROT}. */
     private final int pid;
 
     // ------------------------------------------------------------------------
@@ -51,17 +39,25 @@ public class DijkstraScholtenInitializer implements Control {
     // Methods
     // ------------------------------------------------------------------------
 
-    /**
-    * Initialize an aggregation protocol using a peak distribution.
-    * That is, one node will get the peek value, the others zero.
-    * @return always false
-    */
     public boolean execute() {
-        Node rootNode = Network.get(0);
-        ((DijkstraScholten)rootNode.getProtocol(pid)).parentID = -1;
-        Linkable linkable = (Linkable) rootNode.getProtocol( FastConfig.getLinkable(pid) );
+        int rootNodeIndex = 0;
+        Node rootNode = Network.get(rootNodeIndex);
+        ((DijkstraScholten)rootNode.getProtocol(pid)).parentIndex = -1;
+        ((DijkstraScholten)rootNode.getProtocol(pid)).isActivated = true;
+        Linkable linkable = (Linkable) rootNode.getProtocol(FastConfig.getLinkable(pid));
+        int maxDegree = linkable.degree();
+        for (int i = 0; i < maxDegree; i++) {
+            Node childNode = linkable.getNeighbor(i);
 
-        Node childNode = linkable.getNeighbor(linkable.degree()-1);
+            if (childNode.isUp()) {
+                ((Transport)rootNode.getProtocol(FastConfig.getTransport(pid))).
+                    send(
+                            rootNode,
+                            childNode,
+                            new ActivationMessage(rootNodeIndex),
+                            pid);
+            }
+        }
 
         return false;
     }

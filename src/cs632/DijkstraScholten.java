@@ -14,12 +14,9 @@ implements CDProtocol, EDProtocol {
 // Initialization
 //--------------------------------------------------------------------------
 
-/**
- * @param prefix string prefix for config properties
- */
-public DijkstraScholten(String prefix) { super(prefix); }
+public DijkstraScholten(String prefix) { super(prefix); isActivated=false; }
 
-public long parentID;
+public long parentIndex;
 public boolean isActivated;
 
 //--------------------------------------------------------------------------
@@ -33,24 +30,23 @@ public boolean isActivated;
  */
 public void nextCycle( Node node, int pid )
 {
+    int currentNodeIndex = node.getIndex();
 	Linkable linkable = 
 		(Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
-	if (linkable.degree() > 0)
-	{
-		Node peern = linkable.getNeighbor(
-				CommonState.r.nextInt(linkable.degree()));
-		
-		// XXX quick and dirty handling of failures
-		// (message would be lost anyway, we save time)
-		if(!peern.isUp()) return;
-		
-		((Transport)node.getProtocol(FastConfig.getTransport(pid))).
-			send(
-				node,
-				peern,
-				new AverageMessage(value,node),
-				pid);
-	}
+    int maxDegree = linkable.degree();
+    for (int i = 0; i < maxDegree; i++) {
+        Node childNode = linkable.getNeighbor(i);
+
+        if (childNode.isUp()) {
+            ((Transport)node.getProtocol(FastConfig.getTransport(pid))).
+                send(
+                        node,
+                        childNode,
+                        new ActivationMessage(currentNodeIndex),
+                        pid);
+        }
+    }
+
 }
 
 //--------------------------------------------------------------------------
@@ -59,18 +55,13 @@ public void nextCycle( Node node, int pid )
 * This is the standard method to define to process incoming messages.
 */
 public void processEvent( Node node, int pid, Object event ) {
+    int currentNodeIndex = node.getIndex();
 		
-	AverageMessage aem = (AverageMessage)event;
-	
-	if( aem.sender!=null )
-		((Transport)node.getProtocol(FastConfig.getTransport(pid))).
-			send(
-				node,
-				aem.sender,
-				new AverageMessage(value,null),
-				pid);
-				
-	value = (value + aem.value) / 2;
+	Linkable linkable = 
+		(Linkable) node.getProtocol( FastConfig.getLinkable(pid) );
+	ActivationMessage aem = (ActivationMessage)event;
+    ((DijkstraScholten)node.getProtocol(pid)).parentIndex = aem.senderIndex;
+    ((DijkstraScholten)node.getProtocol(pid)).isActivated = true;
 }
 
 }
@@ -82,16 +73,16 @@ public void processEvent( Node node, int pid, Object event ) {
 * The type of a message. It contains a value of type double and the
 * sender node of type {@link peersim.core.Node}.
 */
-class AverageMessage {
+class ActivationMessage {
 
-	final double value;
-	/** If not null,
-	this has to be answered, otherwise this is the answer. */
-	final Node sender;
-	public AverageMessage( double value, Node sender )
+	final long senderIndex;
+    public ActivationMessage()
+    {
+        this.senderIndex = -1;
+    }
+	public ActivationMessage(long senderNodeIndex)
 	{
-		this.value = value;
-		this.sender = sender;
+		this.senderIndex = senderNodeIndex;
 	}
 }
 
