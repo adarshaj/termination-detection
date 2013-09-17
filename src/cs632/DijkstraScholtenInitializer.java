@@ -5,6 +5,7 @@ import cs632.ActivationMessage;
 import peersim.transport.Transport;
 import peersim.config.*;
 import peersim.core.*;
+import org.ubiety.ubigraph.UbigraphClient;
 
 public class DijkstraScholtenInitializer implements Control {
 
@@ -22,7 +23,7 @@ public class DijkstraScholtenInitializer implements Control {
 
     private final double value;
     private final int pid;
-
+    UbigraphClient graph;
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
@@ -33,6 +34,7 @@ public class DijkstraScholtenInitializer implements Control {
     public DijkstraScholtenInitializer(String prefix) {
         value = Configuration.getDouble(prefix + "." + PAR_VALUE);
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
+        graph = new UbigraphClient();
     }
 
     // ------------------------------------------------------------------------
@@ -58,6 +60,13 @@ public class DijkstraScholtenInitializer implements Control {
                             pid);
             }
         }
+        for (int i = 0; i < Network.size(); i++) {
+            graph.newVertex(i);
+            graph.setVertexAttribute(i, "shape", "sphere");
+            graph.setVertexAttribute(i, "color", "#333333");
+        }
+        graph.setVertexAttribute(0, "color", "#00aa00");
+        graph.setVertexAttribute(0, "size", "5");
         return false;
     }
 }

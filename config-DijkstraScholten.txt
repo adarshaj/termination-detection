@@ -1,5 +1,5 @@
 # network size
-SIZE 100
+SIZE 500
 
 # parameters of periodic execution
 CYCLES 10000
@@ -38,7 +38,7 @@ protocol.tr.drop DROP
 ################### initialization ======================
 
 init.rndlink WireRegRootedTree
-init.rndlink.k 3
+init.rndlink.k 2
 init.rndlink.protocol link
 
 init.setRoot DijkstraScholtenInitializer

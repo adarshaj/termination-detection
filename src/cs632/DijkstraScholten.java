@@ -6,6 +6,7 @@ import peersim.core.*;
 import peersim.transport.Transport;
 import peersim.cdsim.CDProtocol;
 import peersim.edsim.EDProtocol;
+import org.ubiety.ubigraph.UbigraphClient;
 
 public class DijkstraScholten extends SingleValueHolder
 implements CDProtocol, EDProtocol {
@@ -21,16 +22,21 @@ public DijkstraScholten(String prefix) {
     isTerminated = false; 
     parentIndex = -1; 
     computedVal = 0;
+    computedMaxVal = 1;
     terminatedChildren = 0;
     activatedChildren = 0;
+    graph = new UbigraphClient();
 }
 public int parentIndex;
+// public int selfIndex;
 public int terminatedChildren;
 public int activatedChildren;
 public long computedVal;
+public long computedMaxVal;
 public boolean isActivated;
 public boolean isTerminated;
 public boolean activationSent;
+UbigraphClient graph;
 
 //--------------------------------------------------------------------------
 // methods
@@ -64,10 +70,12 @@ public void nextCycle( Node node, int pid )
             }
         }
         activationSent = true;
+        graph.setVertexAttribute(currentNodeIndex, "color", "#aa0000");
+        ((DijkstraScholten)node.getProtocol(pid)).computedMaxVal = (long) (Math.random() * 100);
     }
     if (isActive && !isTerminated) {
-        if ( ((DijkstraScholten)node.getProtocol(pid)).computedVal < currentNodeIndex * currentNodeIndex)
-            ((DijkstraScholten)node.getProtocol(pid)).computedVal+=currentNodeIndex;
+        if ( ((DijkstraScholten)node.getProtocol(pid)).computedVal < ((DijkstraScholten)node.getProtocol(pid)).computedMaxVal)
+            ((DijkstraScholten)node.getProtocol(pid)).computedVal+=1;
         else {
             int terminatedChildren = ((DijkstraScholten)node.getProtocol(pid)).terminatedChildren;
             int parentIndex = ((DijkstraScholten)node.getProtocol(pid)).parentIndex;
@@ -83,6 +91,12 @@ public void nextCycle( Node node, int pid )
                             pid);
                 }
                 ((DijkstraScholten)node.getProtocol(pid)).isTerminated = true;
+                // graph.removeVertex(currentNodeIndex);
+                // 
+                graph.setVertexAttribute(currentNodeIndex, "color", "#333333");
+
+            } else {
+              graph.setVertexAttribute(currentNodeIndex, "color", "#00aa00");
             }
         }
     } 
@@ -103,6 +117,10 @@ public void processEvent( Node node, int pid, Object event ) {
         ActivationMessage aem = (ActivationMessage)event;
         ((DijkstraScholten)node.getProtocol(pid)).parentIndex = aem.senderIndex;
         ((DijkstraScholten)node.getProtocol(pid)).isActivated = true;
+        // graph.newVertex(currentNodeIndex);
+        // graph.setVertexAttribute(currentNodeIndex, "shape", "sphere");
+        graph.newEdge(aem.senderIndex, currentNodeIndex);
+        graph.setVertexAttribute(currentNodeIndex, "color", "#00aa00");
     }
     if ( event instanceof TerminationMessage ) {
         ((DijkstraScholten)node.getProtocol(pid)).terminatedChildren++;

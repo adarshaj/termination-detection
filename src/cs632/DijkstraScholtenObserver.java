@@ -35,7 +35,7 @@ public class DijkstraScholtenObserver implements Control {
         pid = Configuration.getPid(name + "." + PAR_PROT);
         cycles = 0;
         graph = new UbigraphClient();
-        lastVertex = graph.newVertex();
+        // lastVertex = graph.newVertex(0);
     }
 
     // /////////////////////////////////////////////////////////////////////
@@ -45,26 +45,28 @@ public class DijkstraScholtenObserver implements Control {
 
     public boolean execute() {
         long time = peersim.core.CommonState.getTime();
-        DijkstraScholten rootNodeProtocol = (DijkstraScholten) Network.get(0).getProtocol(pid);
+        Node rootNode = Network.get(0);
+        DijkstraScholten rootNodeProtocol = (DijkstraScholten) rootNode.getProtocol(pid);
+        int nodeId = 0;
 
         // IncrementalStats is = new IncrementalStats();
 
          for (int i = 0; i < Network.size(); i++) {
-            DijkstraScholten protocol = (DijkstraScholten) Network.get(i)
+            Node currentNode = Network.get(i);
+            DijkstraScholten protocol = (DijkstraScholten) currentNode
                 .getProtocol(pid);
-// 
-//             SingleValue protocol = (SingleValue) Network.get(i)
-//                     .getProtocol(pid);
-//             is.add(protocol.getValue());
 
         /* Printing statistics */
-            // if(protocol.isTerminated)
+            if(protocol.isActivated && !protocol.activationSent){
                 System.out.println("["+cycles+"]"+i + ": " + protocol.computedVal + "  isActivated->" + protocol.isActivated + " by " + protocol.parentIndex + " terminated children = " + protocol.terminatedChildren);
+                nodeId++;
+            }
         }
 
-        int newVertex = graph.newVertex();
+        // int newVertex = graph.newVertex(nodeId);
 
-        graph.newEdge(lastVertex, newVertex);
+        // graph.newEdge(lastVertex, newVertex);
+        // lastVertex = newVertex;
 
         cycles++;
         /* Terminate if accuracy target is reached */
