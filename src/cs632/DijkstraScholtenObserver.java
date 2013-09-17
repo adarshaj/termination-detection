@@ -4,6 +4,7 @@ import peersim.config.*;
 import peersim.core.*;
 import peersim.vector.*;
 import peersim.util.IncrementalStats;
+import org.ubiety.ubigraph.UbigraphClient;
 
 public class DijkstraScholtenObserver implements Control {
 
@@ -21,6 +22,8 @@ public class DijkstraScholtenObserver implements Control {
     private final String name;
     private final double accuracy;
     private final int pid;
+    private UbigraphClient graph;
+    private int lastVertex;
 
     // /////////////////////////////////////////////////////////////////////
     // Constructor
@@ -31,6 +34,8 @@ public class DijkstraScholtenObserver implements Control {
         accuracy = Configuration.getDouble(name + "." + PAR_ACCURACY, -1);
         pid = Configuration.getPid(name + "." + PAR_PROT);
         cycles = 0;
+        graph = new UbigraphClient();
+        lastVertex = graph.newVertex();
     }
 
     // /////////////////////////////////////////////////////////////////////
@@ -55,7 +60,11 @@ public class DijkstraScholtenObserver implements Control {
         /* Printing statistics */
             // if(protocol.isTerminated)
                 System.out.println("["+cycles+"]"+i + ": " + protocol.computedVal + "  isActivated->" + protocol.isActivated + " by " + protocol.parentIndex + " terminated children = " + protocol.terminatedChildren);
-         }
+        }
+
+        int newVertex = graph.newVertex();
+
+        graph.newEdge(lastVertex, newVertex);
 
         cycles++;
         /* Terminate if accuracy target is reached */
